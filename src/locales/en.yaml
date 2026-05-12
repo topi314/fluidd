@@ -784,6 +784,7 @@ app:
       to_browser_local_storage: To browser local storage
       to_browser_session_storage: To browser session storage
       toolhead_control_style: Toolhead control style
+      toolhead_drop_tool_gcode: Drop tool G-code
       toolhead_move_distances: Toolhead distance values
       toolhead_xy_move_distances: Toolhead XY distance values
       toolhead_z_move_distances: Toolhead Z distance values
@@ -829,6 +830,7 @@ app:
         [BETA] Enable and press '?' to view the list of available keyboard shortcuts
       show_manual_probe_dialog_automatically: Automatically shows helper dialog if running a Manual Probe tool
       show_bed_screws_adjust_dialog_automatically: Automatically shows helper dialog if running BED_SCREWS_ADJUST tool
+      toolhead_drop_tool_gcode: G-code command to run when dropping the current tool. Leave empty to hide the button.
       show_screws_tilt_adjust_dialog_automatically: Automatically shows helper dialog if running SCREWS_TILT_CALCULATE tool
       theme_disclaimer: >-
         These themes feature brand names and logos that are the intellectual property of their respective owners.<br>
@@ -905,6 +907,7 @@ app:
       manual_probe: Manual Probe
       motors_off: Motors Off
       relative_positioning: Relative Positioning
+      drop_tool: Drop current tool
       select_tool: Select tool %{tool}
       tools: Tools
     label:
