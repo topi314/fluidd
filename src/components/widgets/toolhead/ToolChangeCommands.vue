@@ -48,6 +48,26 @@
           </template>
           {{ macro.description }}
         </v-tooltip>
+        <v-tooltip
+          v-if="dropToolGcode && index2 === toolChangeCommandsGrouped.length - 1"
+          top
+        >
+          <template #activator="{ on, attrs }">
+            <app-btn
+              v-bind="attrs"
+              min-width="10"
+              :disabled="!klippyReady || printerPrinting"
+              class="px-0 flex-grow-1"
+              v-on="on"
+              @click="sendGcode(dropToolGcode)"
+            >
+              <v-icon small>
+                $mmuEject
+              </v-icon>
+            </app-btn>
+          </template>
+          {{ $t('app.tool.tooltip.drop_tool') }}
+        </v-tooltip>
       </app-btn-group>
     </v-col>
   </v-row>
@@ -93,11 +113,15 @@ export default class ToolChangeCommands extends Mixins(StateMixin) {
           name: command,
           description,
           color: macro?.variables?.color ? `#${macro.variables.color}` : undefined,
-          active: macro?.variables?.active === true,
+          active: macro?.variables?.active === '1',
           spoolId: macro?.variables?.spool_id ? +macro.variables.spool_id : undefined
         }
       })
       .sort((a, b) => +a.name.substring(1) - +b.name.substring(1))
+  }
+
+  get dropToolGcode (): string {
+    return this.$typedState.config.uiSettings.general.toolheadDropToolGcode
   }
 
   get toolChangeCommandsGrouped (): ToolChangeCommand[][] {
