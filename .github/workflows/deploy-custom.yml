@@ -54,6 +54,7 @@ jobs:
           printf 'config.json\n' > dist/.gitignore
 
           index_file="$(mktemp)"
+          rm -f "$index_file"
           GIT_INDEX_FILE="$index_file" git --work-tree=dist add -A -f
           tree="$(GIT_INDEX_FILE="$index_file" git write-tree)"
           rm -f "$index_file"
