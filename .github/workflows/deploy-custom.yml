@@ -1,0 +1,75 @@
+name: Deploy custom
+
+on:
+  push:
+    branches:
+      - custom
+
+concurrency:
+  group: deploy-custom-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Publish dist
+    if: ${{ github.repository == 'topi314/fluidd' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm and Node
+        uses: ./.github/actions/setup-pnpm-node
+
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      # Moonraker's web updater only installs GitHub releases. Publish the
+      # built site as a fast-forward commit on custom-dist so a git_repo
+      # client can pull it. config.json stays untracked on the printer.
+      - name: Publish custom-dist
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -euo pipefail
+          rm -f dist/config.json
+          printf 'config.json\n' > dist/.gitignore
+
+          index_file="$(mktemp)"
+          GIT_INDEX_FILE="$index_file" git --work-tree=dist add -A -f
+          tree="$(GIT_INDEX_FILE="$index_file" git write-tree)"
+          rm -f "$index_file"
+
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          parent_args=()
+          if git ls-remote --heads "$remote" custom-dist | grep -q custom-dist; then
+            git fetch "$remote" custom-dist
+            parent="$(git rev-parse FETCH_HEAD)"
+            parent_tree="$(git rev-parse "${parent}^{tree}")"
+            if [ "$tree" = "$parent_tree" ]; then
+              echo "Build matches custom-dist, skipping publish"
+              exit 0
+            fi
+            parent_args=(-p "$parent")
+          fi
+
+          commit="$(git commit-tree "$tree" "${parent_args[@]}" -m "build ${GITHUB_SHA}")"
+          git push "$remote" "${commit}:refs/heads/custom-dist"
