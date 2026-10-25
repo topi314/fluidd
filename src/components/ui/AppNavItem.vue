@@ -5,11 +5,9 @@
   >
     <template #activator="{ attrs, on }">
       <v-list-item
-        :to="{ name: to }"
-        :exact="exact"
+        v-bind="itemBindings(attrs)"
         link
         color="secondary"
-        v-bind="attrs"
         v-on="on"
       >
         <v-list-item-icon>
@@ -33,6 +31,7 @@
 
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator'
+import type { RawLocation } from 'vue-router'
 
 import StateMixin from '@/mixins/state'
 import BrowserMixin from '@/mixins/browser'
@@ -45,8 +44,11 @@ export default class AppNavItem extends Mixins(StateMixin, BrowserMixin) {
   @Prop({ type: String })
   readonly title!: string
 
+  @Prop({ type: [String, Object] })
+  readonly to?: RawLocation
+
   @Prop({ type: String })
-  readonly to!: string
+  readonly href?: string
 
   @Prop({ type: Boolean })
   readonly exact?: boolean
@@ -54,9 +56,31 @@ export default class AppNavItem extends Mixins(StateMixin, BrowserMixin) {
   @Prop({ type: String })
   readonly icon?: string
 
+  itemBindings (attrs: Record<string, unknown>) {
+    const link = this.href
+      ? {
+          href: this.href,
+          target: '_blank',
+          rel: 'noopener noreferrer'
+        }
+      : {
+          to: typeof this.to === 'string' ? { name: this.to } : this.to,
+          exact: this.exact
+        }
+
+    return {
+      ...attrs,
+      ...link
+    }
+  }
+
+  get routeName (): string | undefined {
+    return typeof this.to === 'string' ? this.to : undefined
+  }
+
   get accelerator (): string | undefined {
-    return isKeyOf(this.to, Globals.KEYBOARD_SHORTCUTS)
-      ? Globals.KEYBOARD_SHORTCUTS[this.to]
+    return this.routeName && isKeyOf(this.routeName, Globals.KEYBOARD_SHORTCUTS)
+      ? Globals.KEYBOARD_SHORTCUTS[this.routeName]
       : undefined
   }
 
@@ -77,11 +101,12 @@ export default class AppNavItem extends Mixins(StateMixin, BrowserMixin) {
     if (
       shortcut === this.accelerator &&
       !eventTargetIsContentEditable(event) &&
-      this.$route.name !== this.to
+      this.routeName != null &&
+      this.$route.name !== this.routeName
     ) {
       event.preventDefault()
 
-      this.$router.push({ name: this.to })
+      this.$router.push({ name: this.routeName })
     }
   }
 

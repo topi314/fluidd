@@ -82,6 +82,7 @@ declare module 'vue' {
     VAlert: typeof import('vuetify/lib')['VAlert']
     VApp: typeof import('vuetify/lib')['VApp']
     VAppBar: typeof import('vuetify/lib')['VAppBar']
+    VAutocomplete: typeof import('vuetify/lib')['VAutocomplete']
     VBadge: typeof import('vuetify/lib')['VBadge']
     VBreadcrumbs: typeof import('vuetify/lib')['VBreadcrumbs']
     VBreadcrumbsItem: typeof import('vuetify/lib')['VBreadcrumbsItem']

@@ -1,7 +1,13 @@
 import Vue from 'vue'
 import type { MutationTree } from 'vuex'
 import { createState } from './state'
-import type { LayoutConfig, LayoutState, LayoutContainer } from './types'
+import {
+  type LayoutConfig,
+  type LayoutState,
+  type LayoutContainer,
+  isCameraCardConfig,
+  isIframeCardConfig
+} from './types'
 import type { DiagnosticsCardContainer } from '../diagnostics/types'
 
 export const mutations = {
@@ -51,7 +57,11 @@ export const mutations = {
             const currentContainerComponents = currentLayout[containerKey] || []
 
             currentLayout[containerKey] = [
-              ...currentContainerComponents.filter(component => defaultComponentIds.includes(component.id)),
+              ...currentContainerComponents.filter(component => (
+                defaultComponentIds.includes(component.id) ||
+                isCameraCardConfig(component) ||
+                isIframeCardConfig(component)
+              )),
               ...defaultContainerComponents.filter(component => !currentComponentIds.includes(component.id))
             ]
           }

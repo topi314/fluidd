@@ -1,39 +1,99 @@
 <template>
-  <v-row :dense="$vuetify.breakpoint.smAndDown">
-    <template v-for="(container, containerIndex) in containers">
-      <app-observed-column
-        v-if="inLayout || hasCards(container)"
-        :key="`container${containerIndex}`"
+  <div>
+    <v-row
+      v-if="inLayout"
+      justify="center"
+    >
+      <v-col
         cols="12"
-        md="6"
-        :lg="columnSpan"
-        :class="{ 'drag': inLayout }"
+        class="d-flex justify-center"
       >
-        <template #default="{ narrow }">
-          <app-draggable
-            v-model="containers[containerIndex]"
-            class="list-group"
-            :options="draggableOptions"
-            @end="handleUpdateLayout"
+        <app-btn-group>
+          <app-btn
+            small
+            color="primary"
+            @click="handleAddCamera"
           >
-            <template v-for="c in container">
-              <component
-                :is="c.id"
-                v-if="inLayout || (c.enabled && !filtered(c))"
-                :key="c.id"
-                :narrow="narrow"
-                class="mb-2 mb-md-4"
-              />
-            </template>
-          </app-draggable>
-        </template>
-      </app-observed-column>
-    </template>
-  </v-row>
+            <v-icon
+              small
+              left
+            >
+              $plus
+            </v-icon>
+            {{ $t('app.general.title.add_camera_tile') }}
+          </app-btn>
+          <app-btn
+            small
+            color="primary"
+            @click="handleAddIframe"
+          >
+            <v-icon
+              small
+              left
+            >
+              $plus
+            </v-icon>
+            {{ $t('app.general.title.add_iframe') }}
+          </app-btn>
+        </app-btn-group>
+      </v-col>
+    </v-row>
+
+    <v-row :dense="$vuetify.breakpoint.smAndDown">
+      <template v-for="(container, containerIndex) in containers">
+        <app-observed-column
+          v-if="inLayout || hasCards(container)"
+          :key="`container${containerIndex}`"
+          cols="12"
+          md="6"
+          :lg="columnSpan"
+          :class="{ 'drag': inLayout }"
+        >
+          <template #default="{ narrow }">
+            <app-draggable
+              v-model="containers[containerIndex]"
+              class="list-group"
+              :options="draggableOptions"
+              @end="handleUpdateLayout"
+            >
+              <template v-for="c in container">
+                <component
+                  :is="c.type || c.id"
+                  v-if="inLayout || (c.enabled && !filtered(c))"
+                  :key="c.id"
+                  v-bind="cardBindings(c)"
+                  :narrow="narrow"
+                  class="mb-2 mb-md-4"
+                  @edit="handleEditCard"
+                  @delete="handleDeleteCard"
+                />
+              </template>
+            </app-draggable>
+          </template>
+        </app-observed-column>
+      </template>
+    </v-row>
+
+    <camera-card-config-dialog
+      v-if="cameraDialog.active && cameraDialog.card"
+      v-model="cameraDialog.active"
+      :config="cameraDialog.card"
+      @save="handleSaveCard"
+    />
+
+    <iframe-card-config-dialog
+      v-if="iframeDialog.active && iframeDialog.card"
+      v-model="iframeDialog.active"
+      :config="iframeDialog.card"
+      @save="handleSaveCard"
+      @delete="handleDeleteCard"
+    />
+  </div>
 </template>
 
 <script lang="ts">
 import { Component, Mixins, Watch } from 'vue-property-decorator'
+import { v4 as uuidv4 } from 'uuid'
 import StateMixin from '@/mixins/state'
 import PrinterStatusCard from '@/components/widgets/status/PrinterStatusCard.vue'
 import JobsCard from '@/components/widgets/jobs/JobsCard.vue'
@@ -45,7 +105,15 @@ import ConsoleCard from '@/components/widgets/console/ConsoleCard.vue'
 import OutputsCard from '@/components/widgets/outputs/OutputsCard.vue'
 import PrinterLimitsCard from '@/components/widgets/limits/PrinterLimitsCard.vue'
 import RetractCard from '@/components/widgets/retract/RetractCard.vue'
-import type { LayoutConfig, LayoutContainer } from '@/store/layout/types'
+import {
+  type CameraCardConfig,
+  type IframeCardConfig,
+  type LayoutConfig,
+  type LayoutContainer,
+  isCameraCardConfig,
+  isIframeCardConfig
+} from '@/store/layout/types'
+import { createCameraCardState, createIframeCardState } from '@/store/layout/state'
 import BedMeshCard from '@/components/widgets/bedmesh/BedMeshCard.vue'
 import GcodePreviewCard from '@/components/widgets/gcode-preview/GcodePreviewCard.vue'
 import JobQueueCard from '@/components/widgets/job-queue/JobQueueCard.vue'
@@ -55,6 +123,9 @@ import SensorsCard from '@/components/widgets/sensors/SensorsCard.vue'
 import RunoutSensorsCard from '@/components/widgets/runout-sensors/RunoutSensorsCard.vue'
 import BeaconCard from '@/components/widgets/beacon/BeaconCard.vue'
 import AfcCard from '@/components/widgets/afc/AfcCard.vue'
+import IframeCard from '@/components/widgets/iframe/IframeCard.vue'
+import CameraCardConfigDialog from '@/components/widgets/camera/CameraCardConfigDialog.vue'
+import IframeCardConfigDialog from '@/components/widgets/iframe/IframeCardConfigDialog.vue'
 import type Sortable from 'sortablejs'
 
 @Component({
@@ -77,11 +148,24 @@ import type Sortable from 'sortablejs'
     SensorsCard,
     RunoutSensorsCard,
     BeaconCard,
-    AfcCard
+    AfcCard,
+    IframeCard,
+    CameraCardConfigDialog,
+    IframeCardConfigDialog
   }
 })
 export default class Dashboard extends Mixins(StateMixin) {
   containers: Array<LayoutConfig[]> = []
+
+  cameraDialog: { active: boolean, card: CameraCardConfig | null } = {
+    active: false,
+    card: null
+  }
+
+  iframeDialog: { active: boolean, card: IframeCardConfig | null } = {
+    active: false,
+    card: null
+  }
 
   mounted () {
     this.onLayoutChange()
@@ -220,10 +304,86 @@ export default class Dashboard extends Mixins(StateMixin) {
     return container.some(card => card.enabled && !this.filtered(card))
   }
 
+  cardBindings (card: LayoutConfig) {
+    const type = card.type || card.id
+
+    if (type === 'camera-card' || type === 'iframe-card') {
+      return { config: card }
+    }
+
+    return {}
+  }
+
+  handleAddCamera () {
+    const webcams: Moonraker.Webcam.Entry[] = this.$typedGetters['webcams/getEnabledWebcams']
+    this.cameraDialog.card = createCameraCardState(webcams[0]?.uid ?? 'all')
+    this.cameraDialog.active = true
+  }
+
+  handleAddIframe () {
+    this.iframeDialog.card = createIframeCardState()
+    this.iframeDialog.active = true
+  }
+
+  handleEditCard (card: LayoutConfig) {
+    if (!isIframeCardConfig(card)) return
+
+    this.iframeDialog.card = { ...card }
+    this.iframeDialog.active = true
+  }
+
+  handleSaveCard (card: CameraCardConfig | IframeCardConfig) {
+    const layout = this.layout
+    if (!layout) return
+
+    if (!layout.container1) layout.container1 = []
+
+    if (card.id === '') {
+      card.id = uuidv4()
+      layout.container1.push(card)
+    } else {
+      for (const container of Object.values(layout)) {
+        const index = container.findIndex(existing => existing.id === card.id)
+        if (index > -1) {
+          container.splice(index, 1, card)
+          break
+        }
+      }
+    }
+
+    this.persistLayout(layout)
+  }
+
+  handleDeleteCard (id: string) {
+    const layout = this.layout
+    if (!layout) return
+
+    for (const container of Object.values(layout)) {
+      const index = container.findIndex(card => card.id === id)
+      if (index < 0) continue
+
+      const card = container[index]
+      if (!isCameraCardConfig(card) && !isIframeCardConfig(card)) return
+
+      container.splice(index, 1)
+      this.persistLayout(layout)
+      return
+    }
+  }
+
+  persistLayout (layout: LayoutContainer) {
+    const name: string = this.$typedGetters['layout/getSpecificLayoutName']
+
+    this.$typedDispatch('layout/onLayoutChange', {
+      name,
+      value: layout
+    })
+  }
+
   filtered (item: LayoutConfig) {
     // Take care of special cases.
     if (this.inLayout) return false
-    if (item.id === 'camera-card' && !this.hasCameras) return true
+    if ((item.type || item.id) === 'camera-card' && !this.hasCameras) return true
     if (item.id === 'macros-card' && !this.hasMacros) return true
     if (item.id === 'outputs-card' && !this.hasOutputs) return true
     if (item.id === 'printer-status-card' && !this.klippyReady) return true

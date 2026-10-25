@@ -19,10 +19,32 @@ To adjust the layout, open the side menu and click **Adjust Layout**:
   drag handles.
 - **Enable or disable** individual cards using the checkboxes — disabled
   cards are hidden from the dashboard.
+- **Add Camera Tile** places another camera card. Choose every enabled webcam
+  or one webcam in the dialog. That choice stays on the tile. The original
+  camera card keeps its own camera menu. In layout mode, a remove button on
+  an added camera tile deletes that tile.
+- **Add Iframe** places a card that embeds an external `http` or `https` page.
+  Set its title, URL and height when you add it, and change it later from the
+  card menu. In layout mode, a remove button deletes the tile.
 - Click **Exit Layout** when you are done, or **Reset Layout** to restore
-  the default arrangement.
+  the default arrangement. Reset drops camera and iframe tiles you added.
 
 ![Dashboard layout editor with draggable card handles](/assets/images/layout.png)
+
+## Sidebar
+
+**Settings → Sidebar**, directly under General, adds entries to the left
+navigation. Each entry needs a title, an absolute `http` or `https` address,
+an icon, and a position. Position chooses which built-in item the entry sits
+below. **Top** places it above Home. Entries that share a position keep the
+order they have in this list. A position whose item is hidden moves up to the
+nearest visible item.
+
+- **External link** opens that address in a new browser tab.
+- **Page** opens that address inside Fluidd, in a sandboxed iframe.
+
+Entries are saved with your other interface settings and stay in place after a
+reload.
 
 ## Themes
 

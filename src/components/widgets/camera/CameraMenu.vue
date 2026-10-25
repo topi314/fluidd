@@ -37,7 +37,7 @@
       >
         <v-list-item-icon>
           <v-icon>
-            $camera
+            {{ camera.uid === activeId ? '$check' : '$camera' }}
           </v-icon>
         </v-list-item-icon>
         <v-list-item-content>
@@ -51,18 +51,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator'
+import { Component, Mixins, Prop } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 
 @Component({})
 export default class CamerasMenu extends Mixins(StateMixin) {
-  get activeCamera () {
-    const activeWebcam: string = this.$typedState.webcams.activeWebcam
-    const camera: Moonraker.Webcam.Entry | undefined = this.$typedGetters['webcams/getWebcamById'](activeWebcam)
+  @Prop({ type: String })
+  readonly selected?: string
 
-    return !camera
-      ? this.$t('app.general.btn.all').toString()
-      : camera.name
+  get activeId (): string {
+    return this.selected ?? this.$typedState.webcams.activeWebcam
+  }
+
+  get activeCamera () {
+    if (this.activeId === 'all') return this.$t('app.general.btn.all').toString()
+
+    const camera: Moonraker.Webcam.Entry | undefined =
+      this.$typedGetters['webcams/getWebcamById'](this.activeId)
+
+    return camera?.name || this.$t('app.general.msg.camera_missing').toString()
   }
 
   get enabledWebcams (): Moonraker.Webcam.Entry[] {

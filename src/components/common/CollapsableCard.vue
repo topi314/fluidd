@@ -43,6 +43,14 @@
         </v-col>
 
         <v-col
+          v-if="inLayout && hasLayoutActionsSlot"
+          cols="auto"
+          align-self="center"
+        >
+          <slot name="layout-actions" />
+        </v-col>
+
+        <v-col
           cols="auto"
           align-self="center"
         >
@@ -346,6 +354,10 @@ export default class CollapsableCard extends Vue {
       this.$typedState.config.layoutMode &&
       !!this.draggable
     )
+  }
+
+  get hasLayoutActionsSlot (): boolean {
+    return !!this.$slots['layout-actions'] || !!this.$scopedSlots['layout-actions']
   }
 
   /**

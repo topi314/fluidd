@@ -426,6 +426,7 @@ app:
         failed print.
       high: High
       host: Host
+      iframe_url: URL
       layer: Layer
       layout: Layout
       ldap: LDAP
@@ -528,6 +529,9 @@ app:
         previewed
       throttled_warning: This may lead to a throttle condition and result in a
         failed print
+      camera_missing: This camera is no longer available
+      iframe_empty: Set a URL to show a page in this tile
+      iframe_height: Height must be at least 120 pixels
     simple_form:
       error:
         arrayofnums: Only numbers
@@ -561,6 +565,7 @@ app:
         confirm_reboot_host: Are you sure? This will reboot your host system.
         confirm_remove_camera: Are you sure you want to remove the camera
           %{name}?
+        confirm_remove_sidebar_entry: Are you sure you want to remove %{name}?
         confirm_remove_console_filter: Are you sure you want to remove the
           console filter %{name}?
         confirm_remove_macro_category: Are you sure you want to remove the macro
@@ -631,8 +636,11 @@ app:
         total_duration: Total duration
         user: User
     title:
+      add_camera_tile: Add Camera Tile
       add_chart: Add Chart
+      add_iframe: Add Iframe
       add_printer: Add Printer
+      add_sidebar_entry: Add Sidebar Entry
       beacon: Beacon
       bedmesh: Bed Mesh
       bedmesh_controls: Bed Mesh Controls
@@ -642,11 +650,14 @@ app:
       console: Console
       diagnostics: Diagnostics
       edit_chart: Edit Chart
+      edit_iframe: Edit Iframe
+      edit_sidebar_entry: Edit Sidebar Entry
       endstops: Endstops
       fans_outputs: Fans & Outputs
       gcode_preview: Gcode Preview
       history: History
       home: Home
+      iframe: Iframe
       jobs: Jobs
       job_queue: Job Queue
       limits: Printer Limits
@@ -737,6 +748,7 @@ app:
       add_category: Add Category
       add_filter: Add Filter
       add_metric: Add Metric
+      add_sidebar_entry: Add Entry
       add_thermal_preset: Add Preset
       add_user: Add user
       backup: Backup
@@ -894,6 +906,7 @@ app:
         automatically
       show_bed_screws_adjust_dialog_automatically: Show Bed Screws Adjust dialog
         automatically
+      sidebar_position: Position
       show_screws_tilt_adjust_dialog_automatically: Show Screws Tilt Adjust
         dialog automatically
     timer_options:
@@ -913,10 +926,17 @@ app:
       gcode_preview: Gcode Preview
       general: General
       macros: Macros
+      sidebar: Sidebar
       theme: Theme
       thermal_presets: Thermal Presets
       tool: Tool
       warnings: Warnings
+    sidebar_type:
+      link: External link
+      page: Page
+    sidebar_position:
+      start: Top
+      below: Below %{name}
     tooltip:
       average_calculation: If more than one option is select, an average will be
         calculated

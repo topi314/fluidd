@@ -31,86 +31,27 @@
           v-if="socketReady"
           class="nav-items"
         >
-          <app-nav-item
-            icon="$dash"
-            exact
-            to="home"
-          >
-            {{ $t('app.general.title.home') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$console"
-            to="console"
-          >
-            {{ $t('app.general.title.console') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$cubeScan"
-            to="gcode_preview"
-          >
-            {{ $t('app.general.title.gcode_preview') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$files"
-            to="jobs"
-          >
-            {{ $t('app.general.title.jobs') }}
-          </app-nav-item>
-
-          <app-nav-item
-            v-if="supportsHistory"
-            icon="$history"
-            to="history"
-          >
-            {{ $t('app.general.title.history') }}
-          </app-nav-item>
-
-          <app-nav-item
-            v-if="supportsTimelapse"
-            icon="$video"
-            to="timelapse"
-          >
-            {{ $t('app.general.title.timelapse') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$tune"
-            to="tune"
-          >
-            {{ $t('app.general.title.tune') }}
-          </app-nav-item>
-
-          <app-nav-item
-            v-if="enableDiagnostics"
-            icon="$chart"
-            to="diagnostics"
-          >
-            {{ $t('app.general.title.diagnostics') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$codeJson"
-            to="configure"
-          >
-            {{ $t('app.general.title.configure') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$desktopTower"
-            to="system"
-          >
-            {{ $t('app.general.title.system') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$cog"
-            to="settings"
-          >
-            {{ $t('app.general.title.settings') }}
-          </app-nav-item>
+          <template v-for="item in navItems">
+            <app-nav-item
+              v-if="item.kind === 'entry'"
+              :key="item.key"
+              :icon="item.icon"
+              :href="item.entry.type === 'link' ? httpUrl(item.entry.url) : undefined"
+              :to="item.entry.type === 'page' ? pageRoute(item.entry.id) : undefined"
+              :exact="item.entry.type === 'page'"
+            >
+              {{ item.entry.title }}
+            </app-nav-item>
+            <app-nav-item
+              v-else
+              :key="item.key"
+              :icon="item.icon"
+              :exact="item.exact"
+              :to="item.to"
+            >
+              {{ item.title }}
+            </app-nav-item>
+          </template>
         </div>
 
         <template
@@ -151,6 +92,9 @@ import { Component, Mixins, VModel } from 'vue-property-decorator'
 
 import StateMixin from '@/mixins/state'
 import BrowserMixin from '@/mixins/browser'
+import { isSidebarEntry, type SidebarEntry } from '@/store/config/types'
+import { iframeHttpUrl } from '@/util/iframe-url'
+import { sidebarIconName, sidebarInsertAfter } from '@/util/sidebar-entry'
 
 @Component({})
 export default class AppNavDrawer extends Mixins(StateMixin, BrowserMixin) {
@@ -175,6 +119,80 @@ export default class AppNavDrawer extends Mixins(StateMixin, BrowserMixin) {
 
   get showSubNavigation () {
     return this.hasSubNavigation && this.socketReady
+  }
+
+  get sidebarEntries (): SidebarEntry[] {
+    return this.$typedState.config.uiSettings.sidebar.entries
+      .filter(isSidebarEntry)
+  }
+
+  get navItems () {
+    const item = (
+      id: string,
+      icon: string,
+      visible: boolean,
+      exact = false
+    ) => ({
+      id,
+      icon,
+      to: id,
+      exact,
+      title: this.$t(`app.general.title.${id}`).toString(),
+      visible
+    })
+    const builtins = [
+      item('home', '$dash', true, true),
+      item('console', '$console', true),
+      item('gcode_preview', '$cubeScan', true),
+      item('jobs', '$files', true),
+      item('history', '$history', this.supportsHistory),
+      item('timelapse', '$video', this.supportsTimelapse),
+      item('tune', '$tune', true),
+      item('diagnostics', '$chart', this.enableDiagnostics),
+      item('configure', '$codeJson', true),
+      item('system', '$desktopTower', true),
+      item('settings', '$cog', true)
+    ]
+    const visible = builtins.filter(item => item.visible).map(item => item.id)
+    const placed = (after: string) => this.sidebarEntries.filter(entry => (
+      sidebarInsertAfter(entry.after, visible) === after
+    ))
+    const entryItem = (entry: SidebarEntry) => ({
+      kind: 'entry' as const,
+      key: `entry:${entry.id}`,
+      icon: `$${sidebarIconName(entry)}`,
+      entry
+    })
+
+    return [
+      ...placed('start').map(entryItem),
+      ...builtins.flatMap(item => (
+        item.visible
+          ? [
+              {
+                kind: 'builtin' as const,
+                key: `builtin:${item.id}`,
+                icon: item.icon,
+                to: item.to,
+                exact: item.exact,
+                title: item.title
+              },
+              ...placed(item.id).map(entryItem)
+            ]
+          : []
+      ))
+    ]
+  }
+
+  httpUrl (url: string) {
+    return iframeHttpUrl(url)
+  }
+
+  pageRoute (entryId: string) {
+    return {
+      name: 'sidebar_page',
+      params: { entryId }
+    }
   }
 
   get canEditLayout () {

@@ -1,6 +1,33 @@
-import type { LayoutState } from './types'
+import {
+  type CameraCardConfig,
+  type IframeCardConfig,
+  type LayoutState,
+  IFRAME_CARD_DEFAULT_HEIGHT
+} from './types'
 import { v4 as uuidv4 } from 'uuid'
 import type { DiagnosticsCardConfig } from '@/store/diagnostics/types'
+
+export const createCameraCardState = (cameraUid = 'all'): CameraCardConfig => {
+  return {
+    id: '',
+    type: 'camera-card',
+    cameraUid,
+    enabled: true,
+    collapsed: false
+  }
+}
+
+export const createIframeCardState = (): IframeCardConfig => {
+  return {
+    id: '',
+    type: 'iframe-card',
+    url: '',
+    title: '',
+    height: IFRAME_CARD_DEFAULT_HEIGHT,
+    enabled: true,
+    collapsed: false
+  }
+}
 
 export const createDiagnosticsCardState = (): DiagnosticsCardConfig => {
   return {

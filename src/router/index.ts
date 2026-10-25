@@ -115,6 +115,12 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig
   },
   {
+    path: '/sidebar/:entryId',
+    name: 'sidebar_page',
+    component: () => import('@/views/SidebarPage.vue'),
+    meta: {}
+  },
+  {
     path: '/icons',
     name: 'icons',
     component: () => import('@/views/Icons.vue')

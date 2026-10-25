@@ -31,6 +31,37 @@ export interface UiSettings {
   history: HistoryConfig;
   mmu: MmuConfig;
   afc: AfcConfig;
+  sidebar: SidebarConfig;
+}
+
+export interface SidebarConfig {
+  entries: SidebarEntry[];
+}
+
+export interface SidebarEntry {
+  id: string;
+  title: string;
+  url: string;
+  type: 'link' | 'page';
+  /** Key of `Icons` in globals. Missing values use a type default. */
+  icon?: string;
+  /** Built-in item this entry follows. `start` is the top. Missing means Home. */
+  after?: string;
+}
+
+export const isSidebarEntry = (entry: unknown): entry is SidebarEntry => {
+  if (!entry || typeof entry !== 'object') return false
+
+  const value = entry as Record<string, unknown>
+
+  return (
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.url === 'string' &&
+    (value.type === 'link' || value.type === 'page') &&
+    (value.icon === undefined || typeof value.icon === 'string') &&
+    (value.after === undefined || typeof value.after === 'string')
+  )
 }
 
 export interface WarningsConfig {

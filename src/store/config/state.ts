@@ -166,6 +166,9 @@ export const createState = (): ConfigState => {
         showLaneInfinite: true,
         showUnitIcons: true,
         showTd1Color: true,
+      },
+      sidebar: {
+        entries: []
       }
     }
   }
